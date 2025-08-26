@@ -1,69 +1,82 @@
-# React + TypeScript + Vite
+# ChronoFlow – React Front-End
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+---
 
-Currently, two official plugins are available:
+## Prerequisites
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **Node.js ≥ 20.19** (required by Vite 7 / `@vitejs/plugin-react`)
+- npm ≥ 10 (or pnpm/yarn)
 
-## Expanding the ESLint configuration
+---
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Quick start
 
-```js
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+```bash
+# 1) Install deps
+npm install
 
-      // Remove tseslint.configs.recommended and replace with this
-      ...tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      ...tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      ...tseslint.configs.stylisticTypeChecked,
+# 2) Create an env file
+cp .env.example .env.local
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+# 3) Start dev server
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Dev server: http://localhost:5173
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+---
 
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## Environment variables
+
+> Vite only exposes variables that **start with `VITE_`** to the browser.
+
+`.env.example`
+```ini
+VITE_BACKEND_URL=http://localhost:8080/api
+VITE_APP_DEBUG=false
 ```
+
+Read at runtime:
+```ts
+const base = import.meta.env.VITE_BACKEND_URL
+```
+
+---
+
+## Scripts
+
+```bash
+npm run dev        # start Vite dev server
+npm run build      # production build
+npm run preview    # preview the build locally
+npm run lint       # eslint
+npm run typecheck  # run TypeScript in noEmit mode
+```
+
+---
+
+## Tech stack
+
+- **React 18** + **TypeScript**
+- **Vite 7**
+- **React Router v7** – nested routing
+- **Zustand** – global state (auth, sidebar)
+- **Axios** – API client with JWT + refresh interceptors
+- **React Hook Form** – form state management
+- **Tansak React Table** – table management
+- **Zod** – schema validation + type inference
+- **Tailwind CSS v4**
+- **shadcn/ui** (Radix UI primitives wrapped with Tailwind)
+- **lucide-react** – icons
+
+---
+
+## Deployment
+
+```bash
+npm run build
+npm run preview
+```
+
+Host `dist/` on Vercel.
+Set `VITE_BACKEND_URL` in environment variables.
