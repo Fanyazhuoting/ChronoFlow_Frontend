@@ -1,22 +1,31 @@
 import { RouterProvider } from "react-router-dom";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useAuthStore } from "./lib/auth-store";
 import router from "./router/route";
 import { hydrateAuthFromStorage } from "./lib/auth";
 
-function App() {
-  useEffect(() => {
-    // Hydrate auth state on app start
-    hydrateAuthFromStorage();
+function AuthBootstrap({ children }: { children: React.ReactNode }) {
+  const [ready, setReady] = useState(false);
 
-    // Optional: Check token validity on app start
+  useEffect(() => {
+    hydrateAuthFromStorage(); // sync-load tokens
     const { accessToken, isTokenValid, refresh } = useAuthStore.getState();
-    if (accessToken && !isTokenValid?.()) {
-      refresh(); // Silent refresh
-    }
+    (async () => {
+      if (accessToken && !(isTokenValid?.() ?? false)) {
+        await refresh(); // silent refresh if needed
+      }
+      setReady(true);
+    })();
   }, []);
 
-  return <RouterProvider router={router} />;
+  if (!ready) return null; //spinner later
+  return <>{children}</>;
 }
 
-export default App;
+export default function App() {
+  return (
+    <AuthBootstrap>
+      <RouterProvider router={router} />
+    </AuthBootstrap>
+  );
+}

@@ -1,4 +1,3 @@
-// src/router.tsx
 import { createBrowserRouter } from "react-router-dom";
 import AppLayout from "@/pages/Layout";
 import RootPage from "@/pages/Root";
@@ -24,7 +23,7 @@ const router = createBrowserRouter([
   {
     path: "/",
     element: <AppLayout />,
-    loader: requireAuthLoader,
+    // loader: requireAuthLoader,
     errorElement: <ErrorFallback />,
     children: [
       { index: true, element: <RootPage /> },
@@ -33,7 +32,7 @@ const router = createBrowserRouter([
     ],
   },
 
-  { path: "*", element: <div>404 - Page Not Found</div> },
+  { path: "*", element: <ErrorFallback /> },
 ]);
 
 export default router;
