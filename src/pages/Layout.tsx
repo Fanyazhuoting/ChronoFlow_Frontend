@@ -9,7 +9,6 @@ export default function AppLayout() {
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900">
       <Sidebar />
-
       <main
         className={cn(
           "min-h-screen w-full min-w-0",

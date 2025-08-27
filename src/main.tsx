@@ -1,14 +1,10 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import { RouterProvider } from "react-router-dom";
 import "@/styles/global.css";
-import { hydrateAuthFromStorage } from "@/lib/auth-store";
-import router from "./router/route";
-
-hydrateAuthFromStorage();
+import App from "./App";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <RouterProvider router={router} />
+    <App />
   </React.StrictMode>
 );
