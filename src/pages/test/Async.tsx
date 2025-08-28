@@ -12,7 +12,6 @@ const DatasetSchema = z.object({
   sources: z.array(z.string()),
   managedByAgencyName: z.string(),
   childDatasets: z.array(z.string()),
-  hello_testing: z.string(),
 });
 
 type Dataset = z.infer<typeof DatasetSchema>;
