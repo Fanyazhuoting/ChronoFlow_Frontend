@@ -3,6 +3,7 @@ import AppLayout from "@/pages/Layout";
 import RootPage from "@/pages/Root";
 import ErrorFallback from "@/components/error";
 import { redirectIfAuthenticated, requireAuthLoader } from "@/lib/auth";
+import TestPage from "@/pages/test";
 
 const LoginPage = () => <div>Login</div>;
 const RegisterPage = () => <div>Register</div>;
@@ -28,6 +29,7 @@ const router = createBrowserRouter([
     children: [
       { index: true, element: <RootPage /> },
       { path: "members", element: <MembersPage /> },
+      { path: "test", element: <TestPage /> },
       // Add more protected routes here
     ],
   },

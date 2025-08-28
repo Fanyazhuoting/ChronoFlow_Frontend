@@ -1,3 +1,7 @@
 export default function UserAssignmentPage() {
-  return <h2>User Assignment Page</h2>;
+  return (
+    <div>
+      <h2>User Assignment Page</h2>
+    </div>
+  );
 }

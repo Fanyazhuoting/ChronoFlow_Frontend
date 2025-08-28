@@ -1,4 +1,4 @@
-import { type LucideIcon, PlusCircle, User } from "lucide-react";
+import { type LucideIcon, PlusCircle, Cog, User } from "lucide-react";
 import type { User as UserLike } from "./type";
 
 export type Submenu = { href: string; label: string; active: boolean };
@@ -22,6 +22,13 @@ export function getMenuList(pathname: string, user: UserLike): Group[] {
           active: pathname === "/members",
           submenus: [],
           icon: User,
+        },
+        {
+          href: "/test",
+          label: "Test",
+          active: pathname === "/test",
+          submenus: [],
+          icon: Cog,
         },
       ],
     },
