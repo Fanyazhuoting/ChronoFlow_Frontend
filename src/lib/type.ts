@@ -8,7 +8,6 @@ export type User = {
 export interface AuthCredentials {
   user: User;
   accessToken: string;
-  refreshToken?: string;
   accessTokenExp?: number;
 }
 
@@ -16,7 +15,6 @@ export interface AuthState {
   // State
   user: User | null;
   accessToken: string | null;
-  refreshToken: string | null;
   accessTokenExp: number | null;
   _refreshing: Promise<boolean> | null;
 
@@ -24,5 +22,5 @@ export interface AuthState {
   setAuth: (credentials: AuthCredentials) => void;
   clear: () => void;
   refresh: () => Promise<boolean>;
-  isTokenValid?: () => boolean;
+  isTokenValid: () => boolean;
 }

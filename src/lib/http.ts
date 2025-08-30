@@ -7,6 +7,7 @@ export const http = axios.create({
   baseURL: import.meta.env.VITE_BACKEND_URL,
   headers: { "Content-Type": "application/json" },
   timeout: 15000,
+  withCredentials: true,
 });
 
 const isAuthPath = (url?: string) => {
@@ -15,11 +16,10 @@ const isAuthPath = (url?: string) => {
   return path.startsWith("/auth/");
 };
 
-// Request interceptor (proactive refresh)
 http.interceptors.request.use(async (config) => {
   const s = useAuthStore.getState();
 
-  if (!isAuthPath(config.url) && !(s.isTokenValid?.() ?? false)) {
+  if (!isAuthPath(config.url) && !(s.isTokenValid() ?? false)) {
     const ok = await s.refresh();
     if (!ok) {
       s.clear();
@@ -28,15 +28,15 @@ http.interceptors.request.use(async (config) => {
     }
   }
 
-  const token = useAuthStore.getState().accessToken;
-  config.headers = config.headers ?? {};
-  (config.headers as Record<string, string>).Authorization = token
-    ? `Bearer ${token}`
-    : "";
+  const token = s.accessToken;
+  if (token) {
+    config.headers = config.headers ?? {};
+    (config.headers as Record<string, string>).Authorization = `Bearer ${token}`;
+  }
+
   return config;
 });
 
-// Response interceptor (reactive retry)
 http.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
@@ -47,7 +47,6 @@ http.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    // If the failing call itself is an auth endpoint, don't loop—logout
     if (isAuthPath(config.url)) {
       useAuthStore.getState().clear();
       window.location.href = "/login";
@@ -55,7 +54,6 @@ http.interceptors.response.use(
     }
 
     config._retry = true;
-
     const ok = await useAuthStore.getState().refresh();
     if (!ok) {
       useAuthStore.getState().clear();
@@ -65,9 +63,12 @@ http.interceptors.response.use(
 
     const newToken = useAuthStore.getState().accessToken;
     config.headers = config.headers ?? {};
-    (config.headers as Record<string, string>).Authorization = newToken
-      ? `Bearer ${newToken}`
-      : "";
+    if (newToken) {
+      (config.headers as Record<string, string>).Authorization = `Bearer ${newToken}`;
+    } else {
+      delete (config.headers as Record<string, string>).Authorization;
+    }
+
     return http(config);
   }
 );

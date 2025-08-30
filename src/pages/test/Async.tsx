@@ -4,11 +4,10 @@ import { z } from "zod";
 const DatasetSchema = z.object({
   collectionId: z.string(),
   createdAt: z.string(),
+  name: z.string(),
   description: z.string(),
   lastUpdatedAt: z.string(),
-  coverageStart: z.string(),
-  coverageEnd: z.string(),
-  frequency: z.string(), // or z.enum([...])
+  frequency: z.string(),
   sources: z.array(z.string()),
   managedByAgencyName: z.string(),
   childDatasets: z.array(z.string()),
@@ -32,7 +31,7 @@ const Async = () => {
           "https://api-production.data.gov.sg/v2/public/api/collections"
         );
         const raw = await res.json();
-        const parsed = ApiSchema.parse(raw); // throws if shape is wrong
+        const parsed = ApiSchema.parse(raw);
         setPosts(parsed.data.collections);
       } catch (err) {
         console.error("Failed to fetch collections", err);

@@ -5,39 +5,28 @@ import { decodeExp } from "./auth";
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   accessToken: null,
-  refreshToken: null,
   accessTokenExp: null,
   _refreshing: null,
 
-  setAuth: ({ user, accessToken, refreshToken, accessTokenExp }) => {
+  setAuth: ({ user, accessToken, accessTokenExp }) => {
     const exp = accessTokenExp ?? decodeExp(accessToken) ?? null;
-    const next = {
+    set({
       user,
       accessToken,
-      refreshToken: refreshToken ?? get().refreshToken,
       accessTokenExp: exp,
-    };
-    set(next);
-    localStorage.setItem(
-      import.meta.env.VITE_AUTH_STORAGE_KEY,
-      JSON.stringify(next)
-    );
+    });
   },
 
   clear: () => {
     set({
       user: null,
       accessToken: null,
-      refreshToken: null,
       accessTokenExp: null,
       _refreshing: null,
     });
-    localStorage.removeItem(import.meta.env.VITE_AUTH_STORAGE_KEY);
   },
 
   refresh: async () => {
-    const { refreshToken } = get();
-    if (!refreshToken) return false;
     if (get()._refreshing) return get()._refreshing!;
 
     const p = (async () => {
@@ -46,8 +35,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           `${import.meta.env.VITE_BACKEND_URL}/auth/refresh`,
           {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ refreshToken }),
+            credentials: "include",
           }
         );
 
@@ -56,25 +44,17 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         const data: {
           accessToken: string;
           accessTokenExpires?: number;
-          refreshToken?: string;
+          user?: any;
         } = await r.json();
 
         const exp =
           data.accessTokenExpires ?? decodeExp(data.accessToken) ?? null;
 
-        set((s) => {
-          const next = {
-            user: s.user,
-            accessToken: data.accessToken,
-            refreshToken: data.refreshToken ?? s.refreshToken,
-            accessTokenExp: exp,
-          };
-          localStorage.setItem(
-            import.meta.env.VITE_AUTH_STORAGE_KEY,
-            JSON.stringify(next)
-          );
-          return next;
-        });
+        set((s) => ({
+          user: data.user ?? s.user,
+          accessToken: data.accessToken,
+          accessTokenExp: exp,
+        }));
 
         return true;
       } catch {
@@ -91,8 +71,20 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   isTokenValid: (): boolean => {
     const { accessTokenExp } = get();
+
     if (!accessTokenExp) return false;
-    const buf = Number(import.meta.env.VITE_TOKEN_REFRESH_BUFFER ?? 0) || 0;
-    return accessTokenExp * 1000 > Date.now() + buf;
+
+    const DEFAULT_BUFFER_MS = 30_000;
+    const MAX_BUFFER_MS = 5 * 60_000;
+    const SKEW_MS = 5_000;
+
+    const raw = Number(import.meta.env.VITE_TOKEN_REFRESH_BUFFER);
+    const buf = Number.isFinite(raw)
+      ? Math.max(0, Math.min(raw, MAX_BUFFER_MS))
+      : DEFAULT_BUFFER_MS;
+
+    const now = Date.now();
+    const expMs = accessTokenExp * 1000;
+    return expMs > now + buf - SKEW_MS;
   },
 }));
