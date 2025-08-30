@@ -1,22 +1,27 @@
 import { useEffect, useRef } from "react";
 import { useAuthStore } from "@/lib/auth-store";
+import { ensureValidAccessToken, refresh } from "@/api/authApi";
 
 type Options = { bufferMs?: number };
 
 export function useTokenAutoRefresh(options?: Options) {
-  const accessTokenExp = useAuthStore((state) => state.accessTokenExp);
-  const isTokenValid = useAuthStore((state) => state.isTokenValid);
-  const refresh = useAuthStore((state) => state.refresh);
-
+  const accessTokenExp = useAuthStore((s) => s.accessTokenExp); 
   const timerRef = useRef<number | null>(null);
+  const lastFocusRunRef = useRef(0);
 
   const DEFAULT_BUFFER_MS = 30_000;
+  const envBuf = Number(import.meta.env.VITE_TOKEN_REFRESH_BUFFER);
   const configuredBuffer =
     typeof options?.bufferMs === "number"
       ? options.bufferMs
-      : Number(
-          import.meta.env.VITE_TOKEN_REFRESH_BUFFER ?? DEFAULT_BUFFER_MS
-        ) || DEFAULT_BUFFER_MS;
+      : Number.isFinite(envBuf)
+      ? Math.max(0, envBuf)
+      : DEFAULT_BUFFER_MS;
+
+  const isExpValid = (expSec: number | null | undefined, bufMs: number) => {
+    if (!expSec) return false;
+    return expSec * 1000 > Date.now() + bufMs;
+  };
 
   useEffect(() => {
     if (timerRef.current !== null) {
@@ -24,33 +29,19 @@ export function useTokenAutoRefresh(options?: Options) {
       timerRef.current = null;
     }
 
-    if (!accessTokenExp) {
-      return;
-    }
+    if (!accessTokenExp) return;
 
-    const expiryTimeInMs = accessTokenExp * 1000;
-    const now = Date.now();
-    const timeUntilExpiry = expiryTimeInMs - now;
-    const refreshDueIn = timeUntilExpiry - configuredBuffer;
+    const expiryMs = accessTokenExp * 1000;
+    const delay = Math.max(0, expiryMs - Date.now() - configuredBuffer);
 
-    if (refreshDueIn <= 0) {
-      console.log("Token expired or close to expiry → refreshing now");
+    if (delay === 0) {
       void refresh();
       return;
     }
 
-    timerRef.current = window.setTimeout(function scheduledRefreshCheck() {
-      if (typeof isTokenValid === "function") {
-        const stillValid = isTokenValid();
-        if (!stillValid) {
-          console.log("Token invalid on scheduled check → refreshing");
-          void refresh();
-        }
-      } else {
-        console.warn("isTokenValid not available → attempting refresh anyway");
-        void refresh();
-      }
-    }, Math.max(0, refreshDueIn));
+    timerRef.current = window.setTimeout(async () => {
+      await ensureValidAccessToken();
+    }, delay);
 
     return () => {
       if (timerRef.current !== null) {
@@ -58,30 +49,31 @@ export function useTokenAutoRefresh(options?: Options) {
         timerRef.current = null;
       }
     };
-  }, [accessTokenExp, configuredBuffer, isTokenValid, refresh]);
+  }, [accessTokenExp, configuredBuffer]);
 
   useEffect(() => {
-    let lastRun = 0;
-
-    const onFocusOrVisible = () => {
+    const onFocusOrVisible = async () => {
       const now = Date.now();
+      if (now - lastFocusRunRef.current < 1000) return;
+      lastFocusRunRef.current = now;
 
-      if (now - lastRun < 1000) return;
+      if (!isExpValid(accessTokenExp, configuredBuffer)) {
+        await ensureValidAccessToken();
+      }
+    };
 
-      lastRun = now;
-      if (!isTokenValid?.()) void refresh();
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        void onFocusOrVisible();
+      }
     };
 
     window.addEventListener("focus", onFocusOrVisible);
-    document.addEventListener("visibilitychange", () => {
-      if (document.visibilityState === "visible") {
-        onFocusOrVisible();
-      }
-    });
+    document.addEventListener("visibilitychange", onVisibilityChange);
 
     return () => {
       window.removeEventListener("focus", onFocusOrVisible);
-      document.removeEventListener("visibilitychange", onFocusOrVisible);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
     };
-  }, [isTokenValid, refresh]);
+  }, [accessTokenExp, configuredBuffer]);
 }
