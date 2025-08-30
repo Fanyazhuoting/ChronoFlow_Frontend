@@ -1,5 +1,6 @@
 import axios, { AxiosError, type AxiosRequestConfig } from "axios";
-import { useAuthStore } from "./auth-store";
+import { useAuthStore } from "@/lib/auth-store";
+import { ensureValidAccessToken, refresh } from "@/api/authApi";
 
 type RetriableConfig = AxiosRequestConfig & { _retry?: boolean };
 
@@ -17,23 +18,18 @@ const isAuthPath = (url?: string) => {
 };
 
 http.interceptors.request.use(async (config) => {
-  const s = useAuthStore.getState();
-
-  if (!isAuthPath(config.url) && !(s.isTokenValid() ?? false)) {
-    const ok = await s.refresh();
-    if (!ok) {
-      s.clear();
-      window.location.href = "/login";
+  if (!isAuthPath(config.url)) {
+    const token = await ensureValidAccessToken();
+    if (!token) {
+      useAuthStore.getState().clear();
+      if (typeof window !== "undefined") window.location.assign("/login");
       throw new Error("Token refresh failed");
     }
-  }
-
-  const token = s.accessToken;
-  if (token) {
     config.headers = config.headers ?? {};
-    (config.headers as Record<string, string>).Authorization = `Bearer ${token}`;
+    (
+      config.headers as Record<string, string>
+    ).Authorization = `Bearer ${token}`;
   }
-
   return config;
 });
 
@@ -49,22 +45,24 @@ http.interceptors.response.use(
 
     if (isAuthPath(config.url)) {
       useAuthStore.getState().clear();
-      window.location.href = "/login";
+      if (typeof window !== "undefined") window.location.assign("/login");
       return Promise.reject(error);
     }
 
     config._retry = true;
-    const ok = await useAuthStore.getState().refresh();
+    const ok = await refresh();
     if (!ok) {
       useAuthStore.getState().clear();
-      window.location.href = "/login";
+      if (typeof window !== "undefined") window.location.assign("/login");
       return Promise.reject(error);
     }
 
     const newToken = useAuthStore.getState().accessToken;
     config.headers = config.headers ?? {};
     if (newToken) {
-      (config.headers as Record<string, string>).Authorization = `Bearer ${newToken}`;
+      (
+        config.headers as Record<string, string>
+      ).Authorization = `Bearer ${newToken}`;
     } else {
       delete (config.headers as Record<string, string>).Authorization;
     }

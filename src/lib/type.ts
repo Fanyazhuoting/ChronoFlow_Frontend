@@ -16,11 +16,9 @@ export interface AuthState {
   user: User | null;
   accessToken: string | null;
   accessTokenExp: number | null;
-  _refreshing: Promise<boolean> | null;
 
   // Actions
   setAuth: (credentials: AuthCredentials) => void;
   clear: () => void;
-  refresh: () => Promise<boolean>;
   isTokenValid: () => boolean;
 }

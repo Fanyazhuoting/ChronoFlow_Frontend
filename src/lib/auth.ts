@@ -1,34 +1,21 @@
+// auth.ts
+import { ensureValidAccessToken, refresh } from "@/api/authApi";
 import { redirect } from "react-router-dom";
-import { useAuthStore } from "@/lib/auth-store";
 
 export async function requireAuthLoader() {
-  const { accessToken, isTokenValid, refresh } = useAuthStore.getState();
-
-  if (!accessToken || !isTokenValid()) {
-    const ok = await refresh();
-    if (!ok) return redirect("/login");
-  }
-
+  const token = await ensureValidAccessToken();
+  if (!token) return redirect("/login");
   return null;
 }
 
 export async function redirectIfAuthenticated() {
-  const { accessToken, isTokenValid, refresh } = useAuthStore.getState();
-
-  if (!accessToken || !isTokenValid()) {
-    const ok = await refresh();
-    if (!ok) return null;
-  }
-
-  return redirect("/");
+  const token = await ensureValidAccessToken();
+  if (token) return redirect("/");
+  return null;
 }
 
 export async function hydrateAuthOnBoot() {
-  const { accessToken, isTokenValid, refresh } = useAuthStore.getState();
-
-  if (!accessToken || !isTokenValid()) {
-    await refresh();
-  }
+  await refresh();
 }
 
 export function decodeExp(token: string): number | null {
