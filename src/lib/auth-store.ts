@@ -5,22 +5,23 @@ import { decodeExp } from "./auth";
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   accessToken: null,
-  accessTokenExp: null,
+  accessTokenExpireTime: null,
 
-  setAuth: ({ user, accessToken, accessTokenExp }: AuthCredentials) => {
+  setAuth: ({ user, accessToken, accessTokenExpireTime }: AuthCredentials) => {
     set({
       user,
       accessToken,
-      accessTokenExp: accessTokenExp ?? decodeExp(accessToken) ?? null,
+      accessTokenExpireTime:
+        accessTokenExpireTime ?? decodeExp(accessToken) ?? null,
     });
   },
 
   clear: () => {
-    set({ user: null, accessToken: null, accessTokenExp: null });
+    set({ user: null, accessToken: null, accessTokenExpireTime: null });
   },
 
   isTokenValid: () => {
-    const exp = get().accessTokenExp;
+    const exp = get().accessTokenExpireTime;
     if (!exp) return false;
 
     const DEFAULT_BUFFER_MS = 30_000;

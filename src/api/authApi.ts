@@ -1,47 +1,43 @@
 import { useAuthStore } from "@/lib/auth-store";
 import { http } from "@/lib/http";
 import { decodeExp } from "@/lib/auth";
-import type { User, AuthCredentials } from "@/lib/type";
+import type { User, AuthCredentials, LoginUser } from "@/lib/type";
 
 let refreshing: Promise<boolean> | null = null;
 
-function setAuthFromServer(payload: {
-  user?: User;
-  accessToken: string;
-  accessTokenExpires?: number;
-}) {
+function setAuthFromServer(payload: AuthCredentials) {
   const s = useAuthStore.getState();
   const exp =
-    payload.accessTokenExpires ?? decodeExp(payload.accessToken) ?? null;
+    payload.accessTokenExpireTime ?? decodeExp(payload.accessToken) ?? null;
 
   const credentials: AuthCredentials = {
     user: (payload.user ?? s.user) as User,
     accessToken: payload.accessToken,
-    accessTokenExp: exp ?? undefined,
+    accessTokenExpireTime: exp ?? undefined,
   };
 
   s.setAuth(credentials);
 }
 
-export async function login(credentials: User) {
-  const res = await http.post("/auth/login", credentials, {
-    withCredentials: true,
+export async function login(credentials: LoginUser) {
+  const res = await http.post("/system/auth/login", credentials);
+
+  const { user, accessToken, accessTokenExpireTime } = res.data.data;
+
+  setAuthFromServer({
+    user,
+    accessToken,
+    accessTokenExpireTime,
   });
-
-  const { user, accessToken, accessTokenExpires } = res.data as {
-    user: User;
-    accessToken: string;
-    accessTokenExpires?: number;
-  };
-
-  setAuthFromServer({ user, accessToken, accessTokenExpires });
 
   return res.data;
 }
 
 export async function logout() {
   try {
-    await http.post("/auth/logout", {}, { withCredentials: true });
+    await http.post("/system/auth/logout", {});
+  } catch {
+    // ignore network errors
   } finally {
     useAuthStore.getState().clear();
   }
@@ -50,23 +46,19 @@ export async function logout() {
 export function refresh(): Promise<boolean> {
   if (refreshing) return refreshing;
 
-  const base = import.meta.env.VITE_BACKEND_URL as string;
-
   refreshing = (async () => {
     try {
-      const r = await fetch(`${base}/auth/refresh`, {
-        method: "POST",
-        credentials: "include",
+      const r = await http.post("/system/auth/refresh", {});
+
+      const data = r.data;
+
+      const { accessToken, accessTokenExpireTime, user } = data.data;
+
+      setAuthFromServer({
+        user,
+        accessToken,
+        accessTokenExpireTime,
       });
-      if (!r.ok) throw new Error("refresh failed");
-
-      const { accessToken, accessTokenExpires, user } = (await r.json()) as {
-        accessToken: string;
-        accessTokenExpires?: number;
-        user?: User;
-      };
-
-      setAuthFromServer({ user, accessToken, accessTokenExpires });
       return true;
     } catch {
       useAuthStore.getState().clear();
@@ -81,9 +73,5 @@ export function refresh(): Promise<boolean> {
 
 export async function ensureValidAccessToken(): Promise<string | null> {
   const s = useAuthStore.getState();
-  if (!s.isTokenValid()) {
-    const ok = await refresh();
-    if (!ok) return null;
-  }
-  return useAuthStore.getState().accessToken;
+  return s.accessToken ?? null;
 }

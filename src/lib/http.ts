@@ -1,6 +1,6 @@
 import axios, { AxiosError, type AxiosRequestConfig } from "axios";
 import { useAuthStore } from "@/lib/auth-store";
-import { ensureValidAccessToken, refresh } from "@/api/authApi";
+import { refresh } from "@/api/authApi";
 
 type RetriableConfig = AxiosRequestConfig & { _retry?: boolean };
 
@@ -11,24 +11,21 @@ export const http = axios.create({
   withCredentials: true,
 });
 
-const isAuthPath = (url?: string) => {
+const isLoginPath = (url?: string) => {
   if (!url) return false;
-  const path = url.startsWith("http") ? new URL(url).pathname : url;
-  return path.startsWith("/auth/");
+  const p = url.startsWith("http") ? new URL(url).pathname : url;
+  return /^\/system\/auth\/login(\/|$)/.test(p);
 };
 
-http.interceptors.request.use(async (config) => {
-  if (!isAuthPath(config.url)) {
-    const token = await ensureValidAccessToken();
-    if (!token) {
-      useAuthStore.getState().clear();
-      if (typeof window !== "undefined") window.location.assign("/login");
-      throw new Error("Token refresh failed");
+http.interceptors.request.use((config) => {
+  if (!isLoginPath(config.url)) {
+    const token = useAuthStore.getState().accessToken;
+    if (token) {
+      config.headers = config.headers ?? {};
+      (
+        config.headers as Record<string, string>
+      ).Authentication = `Bearer ${token}`;
     }
-    config.headers = config.headers ?? {};
-    (
-      config.headers as Record<string, string>
-    ).Authorization = `Bearer ${token}`;
   }
   return config;
 });
@@ -43,28 +40,27 @@ http.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    if (isAuthPath(config.url)) {
+    if (isLoginPath(config.url)) {
       useAuthStore.getState().clear();
-      if (typeof window !== "undefined") window.location.assign("/login");
       return Promise.reject(error);
     }
 
     config._retry = true;
+
     const ok = await refresh();
+    
     if (!ok) {
       useAuthStore.getState().clear();
-      if (typeof window !== "undefined") window.location.assign("/login");
       return Promise.reject(error);
     }
 
     const newToken = useAuthStore.getState().accessToken;
     config.headers = config.headers ?? {};
+
     if (newToken) {
       (
         config.headers as Record<string, string>
-      ).Authorization = `Bearer ${newToken}`;
-    } else {
-      delete (config.headers as Record<string, string>).Authorization;
+      ).Authentication = `Bearer ${newToken}`;
     }
 
     return http(config);

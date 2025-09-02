@@ -1,23 +1,3 @@
-// auth.ts
-import { ensureValidAccessToken, refresh } from "@/api/authApi";
-import { redirect } from "react-router-dom";
-
-export async function requireAuthLoader() {
-  const token = await ensureValidAccessToken();
-  if (!token) return redirect("/login");
-  return null;
-}
-
-export async function redirectIfAuthenticated() {
-  const token = await ensureValidAccessToken();
-  if (token) return redirect("/");
-  return null;
-}
-
-export async function hydrateAuthOnBoot() {
-  await refresh();
-}
-
 export function decodeExp(token: string): number | null {
   try {
     const [, payload] = token.split(".");

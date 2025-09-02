@@ -2,10 +2,11 @@ import { createBrowserRouter } from "react-router-dom";
 import AppLayout from "@/pages/Layout";
 import RootPage from "@/pages/Root";
 import ErrorFallback from "@/components/error";
-import { redirectIfAuthenticated, requireAuthLoader } from "@/lib/auth";
 import TestPage from "@/pages/test";
+import LoginForm from "@/pages/test/LoginForm";
+import RequireAuth from "@/components/auth/require-auth";
 
-const LoginPage = () => <div>Login</div>;
+const LoginPage = () => <LoginForm />;
 const RegisterPage = () => <div>Register</div>;
 const MembersPage = () => <div>Members Page</div>;
 
@@ -13,24 +14,24 @@ const router = createBrowserRouter([
   {
     path: "/login",
     element: <LoginPage />,
-    loader: redirectIfAuthenticated,
   },
   {
     path: "/register",
     element: <RegisterPage />,
-    loader: redirectIfAuthenticated,
   },
 
   {
     path: "/",
-    element: <AppLayout />,
-    // loader: requireAuthLoader,
-    errorElement: <ErrorFallback />,
+    element: <RequireAuth />,
     children: [
-      { index: true, element: <RootPage /> },
-      { path: "members", element: <MembersPage /> },
-      { path: "test", element: <TestPage /> },
-      // Add more protected routes here
+      {
+        element: <AppLayout />,
+        children: [
+          { index: true, element: <RootPage /> },
+          { path: "members", element: <MembersPage /> },
+          { path: "test", element: <TestPage /> },
+        ],
+      },
     ],
   },
 

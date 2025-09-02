@@ -4,7 +4,7 @@ import { getMenuList } from "@/lib/menu-list";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import defaultGroup from "@/assets/default_group.png";
-
+import { logout } from "@/api/authApi";
 import {
   Tooltip,
   TooltipTrigger,
@@ -14,7 +14,6 @@ import {
 import { useAuthStore } from "@/lib/auth-store";
 import { CollapseMenuButton } from "./collapse-menu-button";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { useCallback } from "react";
 
 interface MenuProps {
   isOpen: boolean | undefined;
@@ -22,20 +21,17 @@ interface MenuProps {
 
 export function Menu({ isOpen }: MenuProps) {
   const { pathname } = useLocation();
+
+  const user = useAuthStore((s) => s.user);
+
+  const menuList = getMenuList(pathname, user!);
+
   const navigate = useNavigate();
 
-  const user = useAuthStore((s) => s.user) ?? {
-    id: "demo",
-    name: "Demo",
-    email: "demo@example.com",
-  };
-
-  const menuList = getMenuList(pathname, user);
-
-  const onSignOut = useCallback(async () => {
-    useAuthStore.getState().clear?.();
+  async function handleLogoutClick() {
+    await logout();
     navigate("/login", { replace: true });
-  }, [navigate]);
+  }
 
   return (
     <ScrollArea className="[&>div>div[style]]:!block">
@@ -133,8 +129,9 @@ export function Menu({ isOpen }: MenuProps) {
               <Tooltip delayDuration={100}>
                 <TooltipTrigger asChild>
                   <Button
+                    type="button"
                     className="w-full justify-start h-10 mb-1"
-                    onClick={onSignOut}
+                    onClick={handleLogoutClick}
                     asChild
                   >
                     <div className="bg-white hover:bg-zinc-100 cursor-pointer">

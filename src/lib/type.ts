@@ -1,21 +1,23 @@
 export type User = {
   id: string;
-  name: string;
-  email: string;
-  role: string;
+};
+
+export type LoginUser = {
+  username: string;
+  password: string;
 };
 
 export interface AuthCredentials {
   user: User;
   accessToken: string;
-  accessTokenExp?: number;
+  accessTokenExpireTime?: number;
 }
 
 export interface AuthState {
   // State
   user: User | null;
   accessToken: string | null;
-  accessTokenExp: number | null;
+  accessTokenExpireTime: number | null;
 
   // Actions
   setAuth: (credentials: AuthCredentials) => void;
