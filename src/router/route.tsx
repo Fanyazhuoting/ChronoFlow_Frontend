@@ -3,23 +3,16 @@ import AppLayout from "@/pages/Layout";
 import RootPage from "@/pages/Root";
 import ErrorFallback from "@/components/error";
 import TestPage from "@/pages/test";
-import LoginForm from "@/pages/test/LoginForm";
 import RequireAuth from "@/components/auth/require-auth";
+import Login from "@/pages/login";
 
-const LoginPage = () => <LoginForm />;
-const RegisterPage = () => <div>Register</div>;
-const MembersPage = () => <div>Members Page</div>;
+const MembersPage = () => <h2>Members Page</h2>;
 
 const router = createBrowserRouter([
   {
     path: "/login",
-    element: <LoginPage />,
+    element: <Login />,
   },
-  {
-    path: "/register",
-    element: <RegisterPage />,
-  },
-
   {
     path: "/",
     element: <RequireAuth />,

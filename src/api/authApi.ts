@@ -1,7 +1,8 @@
 import { useAuthStore } from "@/lib/auth-store";
 import { http } from "@/lib/http";
 import { decodeExp } from "@/lib/auth";
-import type { User, AuthCredentials, LoginUser } from "@/lib/type";
+import type { User, AuthCredentials } from "@/lib/type";
+import type { LoginUser } from "@/lib/validation/schema";
 
 let refreshing: Promise<boolean> | null = null;
 

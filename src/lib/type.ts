@@ -2,11 +2,6 @@ export type User = {
   id: string;
 };
 
-export type LoginUser = {
-  username: string;
-  password: string;
-};
-
 export interface AuthCredentials {
   user: User;
   accessToken: string;
