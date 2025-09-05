@@ -19,7 +19,11 @@ import { login } from "@/api/authApi";
 import { loginUserSchema, type LoginUser } from "@/lib/validation/schema";
 import { useEffect, useState } from "react";
 
-export function LoginCard() {
+type LoginCardProps = {
+  onRegister?: () => void;
+};
+
+export function LoginCard({ onRegister }: LoginCardProps) {
   const [showPwd, setShowPwd] = useState(false);
   const navigate = useNavigate();
 
@@ -182,12 +186,13 @@ export function LoginCard() {
       <CardFooter className="justify-center">
         <p className="text-sm text-muted-foreground">
           Don&apos;t have an account?{" "}
-          <Link
-            to="/signup"
+          <button
+            type="button"
+            onClick={onRegister}
             className="font-medium underline underline-offset-4"
           >
-            Sign up
-          </Link>
+            Register
+          </button>
         </p>
       </CardFooter>
     </Card>

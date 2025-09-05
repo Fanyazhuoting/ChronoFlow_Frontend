@@ -24,76 +24,51 @@ export const MAX_REGISTRATION_FORM_LENGTH = {
   eventDesc: 255,
 } as const;
 
-export const dateFromInput = z.preprocess((v) => {
-  if (typeof v === "string" || v instanceof Date) {
-    const d = new Date(v);
-    if (!isNaN(d.getTime())) return d;
-  }
-  return undefined;
-}, z.date());
-
 export const organizerRegistrationSchema = z
   .object({
-    name: z
-      .string()
-      .trim()
-      .min(1, "Name is required")
-      .max(MAX_REGISTRATION_FORM_LENGTH.name),
-
+    name: z.string().trim().min(1, "Name is required"),
     user_name: z
       .string()
       .trim()
       .min(3, "Username must be at least 3 characters")
-      .max(MAX_REGISTRATION_FORM_LENGTH.username)
       .regex(
         /^[a-zA-Z0-9._-]+$/,
         "Only letters, numbers, dot, underscore, hyphen"
       ),
-
-    user_password: z
-      .string()
-      .min(8, "Password must be at least 8 characters")
-      .max(MAX_REGISTRATION_FORM_LENGTH.password),
-
+    user_password: z.string().min(8, "Password must be at least 8 characters"),
     user_email: z
       .string()
       .trim()
       .min(1, "Email is required")
-      .max(MAX_REGISTRATION_FORM_LENGTH.email)
       .regex(/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/, "Invalid email address"),
-
     user_mobile: z
       .string()
       .trim()
       .min(3, "Mobile is required")
-      .max(MAX_REGISTRATION_FORM_LENGTH.mobile)
       .regex(/^[0-9+\-\s()]{3,20}$/, "Invalid mobile format"),
-
-    event_name: z
-      .string()
-      .trim()
-      .min(1, "Event name is required")
-      .max(MAX_REGISTRATION_FORM_LENGTH.eventName),
-
+    event_name: z.string().trim().min(1, "Event name is required"),
     event_description: z
       .string()
-      .trim()
       .max(MAX_REGISTRATION_FORM_LENGTH.eventDesc)
-      .optional()
-      .default(""),
-
-    event_start_time: dateFromInput,
-    event_end_time: dateFromInput,
+      .optional(),
+    event_start_time: z.date(),
+    event_end_time: z.date(),
   })
-  .refine((v) => v.event_end_time.getTime() > v.event_start_time.getTime(), {
-    path: ["event_end_time"],
-    message: "End time must be after start time",
+  .superRefine((v, ctx) => {
+    if (
+      v.event_start_time instanceof Date &&
+      v.event_end_time instanceof Date &&
+      !Number.isNaN(v.event_start_time.getTime()) &&
+      !Number.isNaN(v.event_end_time.getTime())
+    ) {
+      if (v.event_end_time.getTime() <= v.event_start_time.getTime()) {
+        ctx.addIssue({
+          path: ["event_end_time"],
+          code: z.ZodIssueCode.custom,
+          message: "End time must be after start time",
+        });
+      }
+    }
   });
 
-// Types
-export type OrganizerRegistrationInput = z.input<
-  typeof organizerRegistrationSchema
->; // what the form accepts (strings for datetime-local)
-export type OrganizerRegistrationOutput = z.infer<
-  typeof organizerRegistrationSchema
->; // after parse (Dates)
+export type OrganizerRegistration = z.infer<typeof organizerRegistrationSchema>;

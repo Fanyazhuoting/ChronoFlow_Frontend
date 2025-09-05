@@ -1,6 +1,5 @@
-import { useForm, Controller } from "react-hook-form";
+import { useForm, type DefaultValues } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,63 +11,94 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
-
+import Swal from "sweetalert2";
 import {
   organizerRegistrationSchema,
-  type OrganizerRegistrationInput,
-  type OrganizerRegistrationOutput,
+  type OrganizerRegistration,
 } from "@/lib/validation/schema";
 import { registerOrganizer } from "@/api/registrationApi";
+import { DateTimePicker } from "./date-time-picker";
 
-export function OrganizerRegistrationForm({
-  className,
-}: {
-  className?: string;
-}) {
+type OrganizerRegistrationFormProps = {
+  onSignIn?: () => void;
+};
+
+const defaultValues: DefaultValues<OrganizerRegistration> = {
+  name: "",
+  user_name: "",
+  user_password: "",
+  user_email: "",
+  user_mobile: "",
+  event_name: "",
+  event_description: "",
+};
+
+export function OrganizerRegistrationCard({
+  onSignIn,
+}: OrganizerRegistrationFormProps) {
   const {
     register,
     handleSubmit,
-    control,
     formState: { errors, isSubmitting },
     setError,
     reset,
-  } = useForm<OrganizerRegistrationInput>({
+    setValue,
+    watch,
+  } = useForm<OrganizerRegistration>({
     resolver: zodResolver(organizerRegistrationSchema),
-    defaultValues: {
-      name: "",
-      user_name: "",
-      user_password: "",
-      user_email: "",
-      user_mobile: "",
-      event_name: "",
-      event_description: "",
-      event_start_time: "",
-      event_end_time: "",
-    },
+    defaultValues,
   });
 
-  const onSubmit = handleSubmit(async (raw) => {
+  const eventStartTime = watch("event_start_time");
+  const eventEndTime = watch("event_end_time");
+
+  const onSubmit = handleSubmit(async (values) => {
     try {
-      const parsed: OrganizerRegistrationOutput =
-        organizerRegistrationSchema.parse(raw);
-      await registerOrganizer(parsed);
+      await registerOrganizer(values);
+
+      await Swal.fire({
+        icon: "success",
+        title: "Registration successful",
+        text: "Organizer & event have been created.",
+        confirmButtonText: "OK",
+      });
       reset();
     } catch (err: any) {
-      setError("root", {
-        message:
-          err?.response?.data?.message ??
-          "Registration failed. Please try again.",
+      const msg =
+        err?.response?.data?.message ??
+        err?.message ??
+        "Registration failed. Please try again.";
+
+      setError("root", { message: msg });
+
+      await Swal.fire({
+        icon: "error",
+        title: "Registration failed",
+        text: msg,
+        confirmButtonText: "OK",
       });
     }
   });
 
   return (
-    <Card className={cn("w-full max-w-2xl", className)}>
-      <CardHeader>
+    <Card className="w-full max-w-3xl">
+      <CardHeader className="text-center">
+        {/* Title centered */}
         <CardTitle className="text-2xl">Organizer Registration</CardTitle>
-        <CardDescription>
-          Create your organizer account and event details.
-        </CardDescription>
+
+        {/* Row with description on left and back link on right */}
+        <div className="mt-1 flex items-center justify-between">
+          <CardDescription className="text-left">
+            Create your organizer account and event details.
+          </CardDescription>
+          <button
+            type="button"
+            onClick={onSignIn}
+            className="text-sm underline underline-offset-4"
+          >
+            Back to sign in
+          </button>
+        </div>
       </CardHeader>
 
       <CardContent>
@@ -85,9 +115,9 @@ export function OrganizerRegistrationForm({
               {...register("name")}
               aria-invalid={!!errors.name}
             />
-            {errors.name && (
-              <p className="text-sm text-destructive">{errors.name.message}</p>
-            )}
+            <p className="h-5 text-sm leading-5 text-destructive">
+              {errors.name?.message ?? "\u00A0"}
+            </p>
           </div>
 
           {/* Username */}
@@ -98,11 +128,9 @@ export function OrganizerRegistrationForm({
               {...register("user_name")}
               aria-invalid={!!errors.user_name}
             />
-            {errors.user_name && (
-              <p className="text-sm text-destructive">
-                {errors.user_name.message}
-              </p>
-            )}
+            <p className="h-5 text-sm leading-5 text-destructive">
+              {errors.user_name?.message ?? "\u00A0"}
+            </p>
           </div>
 
           {/* Password */}
@@ -115,11 +143,9 @@ export function OrganizerRegistrationForm({
               {...register("user_password")}
               aria-invalid={!!errors.user_password}
             />
-            {errors.user_password && (
-              <p className="text-sm text-destructive">
-                {errors.user_password.message}
-              </p>
-            )}
+            <p className="h-5 text-sm leading-5 text-destructive">
+              {errors.user_password?.message ?? "\u00A0"}
+            </p>
           </div>
 
           {/* Email */}
@@ -132,11 +158,9 @@ export function OrganizerRegistrationForm({
               {...register("user_email")}
               aria-invalid={!!errors.user_email}
             />
-            {errors.user_email && (
-              <p className="text-sm text-destructive">
-                {errors.user_email.message}
-              </p>
-            )}
+            <p className="h-5 text-sm leading-5 text-destructive">
+              {errors.user_email?.message ?? "\u00A0"}
+            </p>
           </div>
 
           {/* Mobile */}
@@ -147,11 +171,9 @@ export function OrganizerRegistrationForm({
               {...register("user_mobile")}
               aria-invalid={!!errors.user_mobile}
             />
-            {errors.user_mobile && (
-              <p className="text-sm text-destructive">
-                {errors.user_mobile.message}
-              </p>
-            )}
+            <p className="h-5 text-sm leading-5 text-destructive">
+              {errors.user_mobile?.message ?? "\u00A0"}
+            </p>
           </div>
 
           {/* Event Name */}
@@ -162,11 +184,9 @@ export function OrganizerRegistrationForm({
               {...register("event_name")}
               aria-invalid={!!errors.event_name}
             />
-            {errors.event_name && (
-              <p className="text-sm text-destructive">
-                {errors.event_name.message}
-              </p>
-            )}
+            <p className="h-5 text-sm leading-5 text-destructive">
+              {errors.event_name?.message ?? "\u00A0"}
+            </p>
           </div>
 
           {/* Event Description (full width) */}
@@ -178,75 +198,58 @@ export function OrganizerRegistrationForm({
               {...register("event_description")}
               aria-invalid={!!errors.event_description}
             />
-            {errors.event_description && (
-              <p className="text-sm text-destructive">
-                {errors.event_description.message}
-              </p>
-            )}
+            <p className="h-5 text-sm leading-5 text-destructive">
+              {errors.event_description?.message ?? "\u00A0"}
+            </p>
           </div>
 
           {/* Start time */}
           <div className="grid gap-2 md:col-span-1">
             <Label htmlFor="event_start_time">Start time</Label>
-            <Controller
-              name="event_start_time"
-              control={control}
-              render={({ field }) => (
-                <Input
-                  id="event_start_time"
-                  type="datetime-local"
-                  value={(field.value as string) ?? ""}
-                  onChange={(e) => field.onChange(e.target.value)}
-                  aria-invalid={!!errors.event_start_time}
-                />
-              )}
+            <DateTimePicker
+              date={eventStartTime}
+              setDateTime={(d) =>
+                d &&
+                setValue("event_start_time", d, {
+                  shouldDirty: true,
+                  shouldValidate: true,
+                })
+              }
             />
-            {errors.event_start_time && (
-              <p className="text-sm text-destructive">
-                {String(errors.event_start_time.message) ||
-                  "Invalid start time"}
-              </p>
-            )}
+            <p className="h-5 text-sm leading-5 text-destructive">
+              {errors.event_start_time?.message ?? "\u00A0"}
+            </p>
           </div>
 
           {/* End time */}
           <div className="grid gap-2 md:col-span-1">
             <Label htmlFor="event_end_time">End time</Label>
-            <Controller
-              name="event_end_time"
-              control={control}
-              render={({ field }) => (
-                <Input
-                  id="event_end_time"
-                  type="datetime-local"
-                  value={(field.value as string) ?? ""}
-                  onChange={(e) => field.onChange(e.target.value)}
-                  aria-invalid={!!errors.event_end_time}
-                />
-              )}
+            <DateTimePicker
+              date={eventEndTime}
+              setDateTime={(d) =>
+                d &&
+                setValue("event_end_time", d, {
+                  shouldDirty: true,
+                  shouldValidate: true,
+                })
+              }
             />
-            {errors.event_end_time && (
-              <p className="text-sm text-destructive">
-                {String(errors.event_end_time.message) || "Invalid end time"}
-              </p>
-            )}
+            <p className="h-5 text-sm leading-5 text-destructive">
+              {errors.event_end_time?.message ?? "\u00A0"}
+            </p>
           </div>
 
-          {/* Root/server error */}
-          {errors.root?.message && (
-            <div className="md:col-span-2">
-              <p className="text-sm text-destructive">{errors.root.message}</p>
-            </div>
-          )}
-
-          <div className="md:col-span-2 flex justify-end">
-            <Button type="submit" className="h-11" disabled={isSubmitting}>
+          <div className="md:col-span-2 flex justify-center">
+            <Button
+              type="submit"
+              className="h-11 w-full md:w-auto"
+              disabled={isSubmitting}
+            >
               {isSubmitting ? "Creating..." : "Create organizer & event"}
             </Button>
           </div>
         </form>
       </CardContent>
-
       <CardFooter />
     </Card>
   );

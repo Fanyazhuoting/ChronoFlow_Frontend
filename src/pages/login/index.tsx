@@ -1,6 +1,8 @@
-import { LoginCard } from "./components/LoginCard";
 import { motion, useReducedMotion, type Variants } from "framer-motion";
 import { CheckCheck } from "lucide-react";
+import { useState } from "react";
+import { LoginCard } from "./components/LoginCard";
+import { OrganizerRegistrationCard } from "./components/RegistrationCard";
 
 const points = [
   "Lightweight planning for internal workshops, symposiums, and team celebrations.",
@@ -32,7 +34,15 @@ const itemVariants: Variants = {
   },
 };
 
+type View =
+  | "login"
+  | "signup-organizer"
+  | "signup-staff"
+  | "forgot-password"
+  | "registration-selection";
+
 export default function LoginPage() {
+  const [view, setView] = useState<View>("login");
   const bg = `${import.meta.env.BASE_URL}chrono_flow_login_bg.png`;
   const reduceMotion = useReducedMotion();
 
@@ -98,8 +108,16 @@ export default function LoginPage() {
 
       {/* RIGHT (form) */}
       <div className="relative z-10 flex items-center justify-center p-6 md:p-10">
-        <div className="w-full max-w-md">
-          <LoginCard />
+        <div
+          className={`w-full ${
+            view === "signup-organizer" ? "max-w-3xl" : "max-w-md"
+          }`}
+        >
+          {view === "login" ? (
+            <LoginCard onRegister={() => setView("signup-organizer")} />
+          ) : (
+            <OrganizerRegistrationCard onSignIn={() => setView("login")} />
+          )}
         </div>
       </div>
     </div>
